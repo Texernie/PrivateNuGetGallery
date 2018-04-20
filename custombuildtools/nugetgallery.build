@@ -4,7 +4,7 @@
   <PropertyGroup>
     <BuildVersion>$(BUILD_NUMBER)</BuildVersion>
     <ProjectRootFolder>..\</ProjectRootFolder>
-	<PublishingStagingFolder>..\..\..\PublishingStage</PublishingStagingFolder>
+	<PublishingStagingFolder>..\..\PublishingStage</PublishingStagingFolder>
   </PropertyGroup>
 
   <Target Name="DevelopmentPublish">
