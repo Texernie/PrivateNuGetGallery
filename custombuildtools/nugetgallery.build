@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="3.5" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <PropertyGroup>
+    <BuildVersion>$(BUILD_NUMBER)</BuildVersion>
+    <ProjectRootFolder>..\</ProjectRootFolder>
+	<PublishingStagingFolder>..\..\PublishingStage</PublishingStagingFolder>
+  </PropertyGroup>
+
+  <Target Name="DevelopmentPublish">
+    <Message Text="Version specific Build-Publish started for build no $(BuildVersion)" />
+    <CallTarget Targets="CleanBuildFiles" />
+    <CallTarget Targets="BuildApplication" />
+    <CallTarget Targets="BuildAdditionalApplications" />
+    <CallTarget Targets="BuildWebApplications" />
+    <CallTarget Targets="PostBuildCleans" />
+    <CallTarget Targets="CopyFiles" />
+  </Target>
+
+  <Target Name="CleanBuildFiles">
+    <Message Text="Cleaning builds" />
+    <MSBuild Projects="@(ApplicationProjects)" Targets="Clean" Properties="Configuration=Release;Platform=AnyCpu;ApplicationVersion=$(BuildVersion);UpdateEnabled=True;UpdateUrl=%(PublishLocation)\;InstallUrl=%(PublishLocation)\;MinimumRequiredVersion=$(BuildVersion);PublishDir=%(PublishLocation)\" BuildInParallel="true" />
+    <MSBuild Projects="@(AdditionalProjects)" Targets="Clean" Properties="Configuration=Release;Platform=AnyCpu;ApplicationVersion=$(BuildVersion);OutputPath=bin" BuildInParallel="true" />
+    <MSBuild Projects="@(WebProjects)" Targets="Clean" Properties="Configuration=Release;Platform=Any Cpu;ApplicationVersion=$(BuildVersion);OutputPath=bin;" BuildInParallel="true" />
+    <RemoveDir Directories="%(ApplicationProjects.PublishLocation)\" ContinueOnError="true" Condition="'%(ApplicationProjects.PublishLocation)'!=''" />
+    <RemoveDir Directories="$(ProjectRootFolder)\WebsitePublish\" ContinueOnError="true" Condition="'$(ProjectRootFolder)\WebsitePublish\'!=''"/>
+	<RemoveDir Directories="$(PublishingStagingFolder)\" ContinueOnError="true" Condition="'$(PublishingStagingFolder)'!=''" />
+  </Target>
+
+  <Target Name="BuildApplication">
+    <Message Text="@@@ Building Click-once projects" />
+    <MSBuild Projects="%(ApplicationProjects.Identity)" 
+             Targets="Build;Publish" 
+             Properties="Configuration=Release;Platform=Any Cpu;ApplicationVersion=$(BuildVersion);UpdateEnabled=True;UpdateUrl=%(ApplicationProjects.DestinationFolder)\;InstallUrl=%(ApplicationProjects.DestinationFolder)\;MinimumRequiredVersion=$(BuildVersion);PublishDir=%(ApplicationProjects.PublishLocation)\;OutputPath=bin" 
+             BuildInParallel="true" />
+  </Target>
+
+  <Target Name="BuildAdditionalApplications">
+    <Message Text="@@@ Building Additional Projects" />
+    <MSBuild Projects="@(AdditionalProjects)"
+             Targets="Build"
+             Properties="Configuration=Release;Platform=Any Cpu;ApplicationVersion=$(BuildVersion);OutputPath=bin"
+             BuildInParallel="true" />
+  </Target>
+
+  <Target Name="BuildWebApplications">
+    <Message Text="@@@ Building And Publishing Web Projects" />
+    <MSBuild Projects="@(WebProjects)"
+             BuildInParallel="true"
+             Properties="Configuration=Release;Platform=Any Cpu;ApplicationVersion=$(BuildVersion);OutputPath=bin;"
+    />
+  </Target>
+
+  <ItemGroup>
+
+    <WebProjects Include="$(ProjectRootFolder)\src\NuGetGallery\NuGetGallery.csproj">
+      <AdditionalProperties>
+        WebPublishMethod=FileSystem;
+        publishUrl=$(PublishingStagingFolder)\NuGetGallery;
+        DeployOnBuild=true;
+        MvcBuildViews=true;
+        DeployTarget=WebPublish;
+        DeleteExistingFiles=true;
+      </AdditionalProperties>
+    </WebProjects>
+
+	</ItemGroup>
+
+  <Target Name="CopyFiles">
+    <Message Text="Staging files for $(BUILD_NUMBER)" />
+  </Target>
+
+  <Target Name="PostBuildCleans">
+    <Message Text="Removing config files that are not to be deployed"/>
+
+    <Message Text="Searching for all configs     in folder %(WebProjects.ConfigClearFolder)" Condition="'%(WebProjects.ConfigClearFolder)'!=''"/>
+    <Message Text="Searching for web.*config     in folder %(WebProjects.WebConfigClearFolder)" Condition="'%(WebProjects.WebConfigClearFolder)'!=''"/>
+    <Message Text="Searching for website.config  in folder %(WebProjects.WebsiteConfigClearFolder)" Condition="'%(WebProjects.WebsiteConfigClearFolder)'!=''"/>
+    <Message Text="Searching for log4net.config  in folder %(WebProjects.Log4netConfigClearFolder)" Condition="'%(WebProjects.Log4netConfigClearFolder)'!=''"/>
+    <Message Text="Searching for packages.config in folder %(WebProjects.PackagesConfigClearFolder)" Condition="'%(WebProjects.PackagesConfigClearFolder)'!=''"/>
+
+    <CreateItem Include="%(WebProjects.ConfigClearFolder)\**\Web.*config" Condition="'%(WebProjects.ConfigClearFolder)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToClean"/>
+    </CreateItem>
+    <CreateItem Include="%(WebProjects.WebConfigClearFolder)\**\Web.*config" Condition="'%(WebProjects.WebConfigClearFolder)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToClean"/>
+    </CreateItem>
+    <CreateItem Include="%(WebProjects.ConfigClearFolder)\**\website.config" Condition="'%(WebProjects.ConfigClearFolder)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToClean"/>
+    </CreateItem>
+    <CreateItem Include="%(WebProjects.WebsiteConfigClearFolder)\**\website.config" Condition="'%(WebProjects.WebsiteConfigClearFolder)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToClean"/>
+    </CreateItem>
+    <CreateItem Include="%(WebProjects.ConfigClearFolder)\**\log4net.config" Condition="'%(WebProjects.ConfigClearFolder)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToClean"/>
+    </CreateItem>
+    <CreateItem Include="%(WebProjects.Log4netConfigClearFolder)\**\log4net.config" Condition="'%(WebProjects.Log4netConfigClearFolder)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToClean"/>
+    </CreateItem>
+    <CreateItem Include="%(WebProjects.ConfigClearFolder)\**\packages.config" Condition="'%(WebProjects.ConfigClearFolder)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToClean"/>
+    </CreateItem>
+    <CreateItem Include="%(WebProjects.PackagesConfigClearFolder)\**\packages.config" Condition="'%(WebProjects.PackagesConfigClearFolder)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToClean"/>
+    </CreateItem>
+
+    <Delete Files="@(FilesToClean)"/>
+  </Target>
+
+  <Target Name="CopyNuspecs">
+    <CreateItem Include="%(AdditionalProjects.CustomNuspec)" Condition="'%(AdditionalProjects.CustomNuspec)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToCopy"/>
+    </CreateItem>
+
+    <CreateItem Include="%(WebProjects.CustomNuspec)" Condition="'%(WebProjects.CustomNuspec)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToCopy"/>
+    </CreateItem>
+
+    <CreateItem Include="%(ApplicationProjects.CustomNuspec)" Condition="'%(ApplicationProjects.CustomNuspec)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToCopy"/>
+    </CreateItem>
+
+    <Copy SourceFiles="@(FilesToCopy)" DestinationFolder="$(PublishingStagingFolder)" />
+  </Target>
+</Project>
