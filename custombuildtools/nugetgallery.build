@@ -56,7 +56,7 @@
     <WebProjects Include="$(ProjectRootFolder)\src\NuGetGallery\NuGetGallery.csproj">
       <AdditionalProperties>
         WebPublishMethod=FileSystem;
-        publishUrl=$(PublishingStagingFolder)\NuGetGallery;
+        publishUrl=..\$(PublishingStagingFolder)\NuGetGallery;
         DeployOnBuild=true;
         MvcBuildViews=true;
         DeployTarget=WebPublish;
