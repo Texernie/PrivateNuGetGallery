@@ -198,7 +198,7 @@ namespace NuGetGallery
                 .AsSelf()
                 .As<IDeleteAccountService>()
                 .InstancePerLifetimeScope();
-            
+
             builder.RegisterType<PackageOwnerRequestService>()
                 .AsSelf()
                 .As<IPackageOwnerRequestService>()
@@ -251,7 +251,7 @@ namespace NuGetGallery
                 .AsSelf()
                 .As<IApiScopeEvaluator>()
                 .InstancePerLifetimeScope();
-            
+
             builder.RegisterType<ContentObjectService>()
                 .AsSelf()
                 .As<IContentObjectService>()
@@ -331,6 +331,11 @@ namespace NuGetGallery
                     ConfigureForAzureStorage(builder, configuration, telemetryClient);
                     defaultAuditingService = GetAuditingServiceForAzureStorage(builder, configuration);
                     break;
+                case StorageType.AwsS3Storage:
+                    ConfigureForAwsS3Storage(builder, configuration);
+                    defaultAuditingService = AuditingService.None;
+                    break;
+
             }
 
             RegisterAsynchronousValidation(builder, configuration);
@@ -643,6 +648,55 @@ namespace NuGetGallery
                 .SingleInstance();
 
             return service;
+        }
+
+        private static void ConfigureForAwsS3Storage(ContainerBuilder builder, IGalleryConfigurationService configuration)
+        {
+            builder.RegisterType<AwsS3FileSystemService>()
+                    .AsSelf()
+                    .As<IFileSystemService>()
+                    .SingleInstance();
+
+            builder.RegisterType<AwsS3FileSystemStorageService>()
+            .AsSelf()
+            .As<IFileStorageService>()
+            .SingleInstance();
+
+            foreach (var dependent in StorageDependent.GetAll(configuration.Current))
+            {
+                var registration = builder.RegisterType(dependent.ImplementationType)
+                                                        .AsSelf()
+                        .As(dependent.InterfaceType);
+
+                if (dependent.IsSingleInstance)
+                {
+                    registration.SingleInstance();
+                }
+                else
+                {
+                    registration.InstancePerLifetimeScope();
+                }
+            }
+
+            builder.RegisterInstance(NullReportService.Instance)
+                .AsSelf()
+                .As<IReportService>()
+                .SingleInstance();
+
+            builder.RegisterInstance(NullStatisticsService.Instance)
+                .AsSelf()
+                .As<IStatisticsService>()
+                .SingleInstance();
+
+            // If we're not using azure storage, then aggregate stats comes from SQL
+            builder.RegisterType<SqlAggregateStatsService>()
+                .AsSelf()
+                .As<IAggregateStatsService>()
+                .InstancePerLifetimeScope();
+
+            builder.RegisterInstance(new SqlErrorLog(configuration.Current.SqlConnectionString))
+                .As<ErrorLog>()
+                .SingleInstance();
         }
 
         private static IAuditingService CombineAuditingServices(IEnumerable<IAuditingService> services)

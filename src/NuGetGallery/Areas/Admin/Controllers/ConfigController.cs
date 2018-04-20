@@ -26,17 +26,22 @@ namespace NuGetGallery.Areas.Admin.Controllers
         public virtual ActionResult Index()
         {
             var settings = (from p in typeof(IAppConfiguration).GetProperties(BindingFlags.Public | BindingFlags.Instance)
-                        where p.CanRead
-                        select p)
+                            where p.CanRead
+                            select p)
                        .ToDictionary(p => p.Name, p =>
                        {
                            var propertyType = p.PropertyType;
                            var propertyValue = p.GetValue(_config.Current);
 
-                           if (propertyValue != null && p.Name.ToLowerInvariant().Contains("connectionstring"))
+                           var sensitiveNames = new[]
                            {
+                               "connectionstring",
+                               "accesskey",
+                               "secretkey"
+                           };
+
+                           if (propertyValue != null && sensitiveNames.Any(x => p.Name.ToLowerInvariant().Contains(x)))
                                propertyValue = new string('*', 10);
-                           }
 
                            return Tuple.Create(propertyType, propertyValue);
                        });
