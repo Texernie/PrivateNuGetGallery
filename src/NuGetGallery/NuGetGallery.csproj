@@ -2069,6 +2069,11 @@
     <Content Include="Views\Authentication\_SigninAssistance.cshtml" />
     <Content Include="Views\Organizations\Add.cshtml" />
     <Content Include="Views\Organizations\HandleOrganizationMembershipRequest.cshtml" />
+    <Content Include="_Deployment\Scripts\deploy.ps1" />
+    <Content Include="_Deployment\Scripts\postdeploy.ps1" />
+    <Content Include="_Deployment\Scripts\predeploy.ps1" />
+    <Content Include="_Deployment\AbcNuGetGallery.nuspec" />
+    <None Include="_Deployment\Dockerfile" />
   </ItemGroup>
   <ItemGroup>
     <CodeAnalysisDictionary Include="Properties\CodeAnalysisDictionary.xml" />

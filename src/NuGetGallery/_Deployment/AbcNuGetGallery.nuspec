@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package>
+  <metadata>
+    <id>AbcNuGet.Build.Gallery</id>
+    <version>0.00</version>
+    <authors>EE Development Team</authors>
+    <owners>ABC Imaging</owners>
+    <title>ABC Branded NuGet Gallery</title>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>The ABC Branded NuGet Gallery deployment package.</description>
+    <copyright>Copyright ABC Imaging</copyright>
+    <releaseNotes></releaseNotes>
+  </metadata>
+  <files>
+    <file src="..\src\NuGetGallery\_Deployment\Scripts\*" target="\" />
+    <file src="..\src\NuGetGallery\_Deployment\Config\*" target="\_Deployment\Config" />
+    <file src="..\..\PublishingStage\NuGetGallery\Web.config" target="\_Deployment\Config" />
+    <!--Dll-->
+    <!--Db Updater-->
+  </files>
+</package>
