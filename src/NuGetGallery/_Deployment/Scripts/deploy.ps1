@@ -110,7 +110,7 @@ try
 	Log-And-Run $c $eco
 	if ( $eco.ec -ne 0 ) { exit }
 
-	$c = "docker cp `"$installationPath\_Deployment\Config\web.config`" ${containerName}:C:\app\web.config"
+	$c = "docker cp `"$installationPath\_Deployment\Config\web.config`" ${containerName}:C:\app\bin\web.config"
 	Log-And-Run $c $eco
 	if ( $eco.ec -ne 0 ) { exit }
 
