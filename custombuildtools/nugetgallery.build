@@ -62,6 +62,10 @@
         DeployTarget=WebPublish;
         DeleteExistingFiles=true;
       </AdditionalProperties>
+      <PackagesConfigClearFolder>$(PublishingStagingFolder)\NuGetGallery</PackagesConfigClearFolder>
+      <CustomNuspec>
+        $(ProjectRootFolder)\src\NuGetGallery\_Deployment\AbcNuGetGallery.nuspec
+      </CustomNuspec>
     </WebProjects>
 
 	</ItemGroup>
