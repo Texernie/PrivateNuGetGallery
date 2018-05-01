@@ -63,6 +63,7 @@
         DeleteExistingFiles=true;
       </AdditionalProperties>
       <PackagesConfigClearFolder>$(PublishingStagingFolder)\NuGetGallery</PackagesConfigClearFolder>
+      <DeploymentsClearFolder>$(PublishingStagingFolder)\NuGetGallery</DeploymentsClearFolder>
       <CustomNuspec>
         $(ProjectRootFolder)\src\NuGetGallery\_Deployment\AbcNuGetGallery.nuspec
       </CustomNuspec>
@@ -82,6 +83,7 @@
     <Message Text="Searching for website.config  in folder %(WebProjects.WebsiteConfigClearFolder)" Condition="'%(WebProjects.WebsiteConfigClearFolder)'!=''"/>
     <Message Text="Searching for log4net.config  in folder %(WebProjects.Log4netConfigClearFolder)" Condition="'%(WebProjects.Log4netConfigClearFolder)'!=''"/>
     <Message Text="Searching for packages.config in folder %(WebProjects.PackagesConfigClearFolder)" Condition="'%(WebProjects.PackagesConfigClearFolder)'!=''"/>
+    <Message Text="Searching for folder %(WebProjects.DeploymentsClearFolder)\_Deployment" Condition="'%(WebProjects.DeploymentsClearFolder)'!=''"/>
 
     <CreateItem Include="%(WebProjects.ConfigClearFolder)\**\Web.*config" Condition="'%(WebProjects.ConfigClearFolder)'!=''">
       <Output TaskParameter="Include" ItemName="FilesToClean"/>
@@ -105,6 +107,9 @@
       <Output TaskParameter="Include" ItemName="FilesToClean"/>
     </CreateItem>
     <CreateItem Include="%(WebProjects.PackagesConfigClearFolder)\**\packages.config" Condition="'%(WebProjects.PackagesConfigClearFolder)'!=''">
+      <Output TaskParameter="Include" ItemName="FilesToClean"/>
+    </CreateItem>
+    <CreateItem Include="%(WebProjects.DeploymentsClearFolder)\_Deployment\**\*" Condition="'%(WebProjects.DeploymentsClearFolder)'!=''">
       <Output TaskParameter="Include" ItemName="FilesToClean"/>
     </CreateItem>
 
