@@ -15,6 +15,7 @@ SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPref
 RUN Set-ItemProperty -path 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Parameters' -Name ServerPriorityTimeLimit -Value 0 -Type DWord; `
     Get-Website | Remove-Website; `
 	Get-ChildItem 'IIS:\AppPools' | Select-Object Name | % { remove-webapppool $_.Name }; `
+	New-Item -Path 'C:\install' -Type Directory -Force; `
 	New-Item -Path 'C:\app\bin' -Type Directory -Force; `
 	New-Item -Path 'C:\app\config' -Type Directory -Force; `
 	$a = New-WebAppPool -Name 'DefaultAppPool' -Force; `
@@ -29,6 +30,13 @@ RUN Set-ItemProperty -path 'HKLM:\SYSTEM\CurrentControlSet\Services\Dnscache\Par
 
 EXPOSE 80
 
+WORKDIR /install
+ADD https://download.microsoft.com/download/C/9/E/C9E8180D-4E51-40A6-A9BF-776990D8BCA9/rewrite_amd64.msi rewrite_amd64.msi
+RUN Write-Host 'Installing URL Rewrite' ; `
+	Start-Process msiexec.exe -ArgumentList '/i', 'rewrite_amd64.msi', '/quiet', '/norestart' -NoNewWindow -Wait
+
 WORKDIR /App/Bin
+RUN Remove-Item -Recurse -Force c:\install
+
 ARG source=obj/Docker/publish
 COPY $source .
