@@ -12,12 +12,11 @@
     <releaseNotes></releaseNotes>
   </metadata>
   <files>
-    <file src="..\src\NuGetGallery\_Deployment\Scripts\*" target="\" />
-    <file src="..\src\NuGetGallery\_Deployment\Config\*" target="\_Deployment\Config" />
-    <file src="..\..\PublishingStage\NuGetGallery\Web.config" target="\_Deployment\Config" />
-    <file src="..\packages\EntityFramework.6.1.3\tools\migrate.exe" target="\_Deployment\DbUpdater"/>
-    <file src="..\packages\EntityFramework.6.1.3\lib\net45\*" target="\_Deployment\DbUpdater"/>
-    <file src="..\..\PublishingStage\NuGetGallery\bin\NuGetGallery.Core.dll" target="\_Deployment\DbUpdater"/>
-    <file src="..\..\PublishingStage\NuGetGallery\bin\NuGetGallery.dll" target="\_Deployment\DbUpdater"/>
+    <file src="..\NuGetGallery\src\NuGetGallery\_Deployment\Scripts\*" target="\" />
+    <file src="..\PublishingStage\NuGetGallery\Web.config" target="\_Deployment\Config" />
+    <file src="..\NuGetGallery\packages\EntityFramework.6.1.3\tools\migrate.exe" target="\_Deployment\DbUpdater"/>
+    <file src="..\NuGetGallery\packages\EntityFramework.6.1.3\lib\net45\*" target="\_Deployment\DbUpdater"/>
+    <file src="..\PublishingStage\NuGetGallery\bin\NuGetGallery.Core.dll" target="\_Deployment\DbUpdater"/>
+    <file src="..\PublishingStage\NuGetGallery\bin\NuGetGallery.dll" target="\_Deployment\DbUpdater"/>
   </files>
 </package>
