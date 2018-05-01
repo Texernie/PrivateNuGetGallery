@@ -645,6 +645,16 @@ namespace NuGetGallery
                 RouteName.DownloadNuGetExe,
                 "nuget.exe",
                 new { controller = "Api", action = "GetNuGetExeApi" });
+
+            routes.MapRoute(
+                "AbcPingCheck",
+                "pingcheck",
+                new {controller = "Api", action = "AbcPingCheck"});
+
+            routes.MapRoute(
+                "AbcHealthCheck",
+                "healthcheck",
+                new {controller = "Api", action = "AbcHealthCheck"});
         }
     }
 }

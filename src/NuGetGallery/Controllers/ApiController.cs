@@ -2,6 +2,7 @@
 // Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
 
 using System;
+using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Globalization;
@@ -9,9 +10,13 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using System.Web.UI;
+using Amazon;
+using Amazon.Runtime;
+using Amazon.S3;
+using Amazon.S3.Model;
 using Newtonsoft.Json.Linq;
 using NuGet.Frameworks;
 using NuGet.Packaging;
@@ -223,6 +228,72 @@ namespace NuGetGallery
         public ActionResult HealthProbe()
         {
             return new HttpStatusCodeWithBodyResult(HttpStatusCode.OK, "Gallery is Available");
+        }
+
+        [HttpGet]
+        [ActionName("AbcPingCheck")]
+        public ActionResult AbcPingCheck()
+        {
+            return new HttpStatusCodeWithBodyResult(HttpStatusCode.OK, "Pong");
+        }
+
+        [HttpGet]
+        [ActionName("AbcHealthCheck")]
+        public ActionResult AbcHealthCheck()
+        {
+            try
+            {
+                var str = ConfigurationManager.AppSettings
+                    .AllKeys
+                    .FirstOrDefault(x => Regex.IsMatch(ConfigurationManager.AppSettings[x], "^#{.*}$"));
+
+                if (!string.IsNullOrWhiteSpace(str))
+                    return new HttpStatusCodeWithBodyResult(HttpStatusCode.OK, string.Format("NOT-OK : Variable substitution failed for '{0}'", str));
+
+                var config = ConfigurationService.Current;
+
+                try
+                {
+                    using (var dbContext = new EntitiesContext(config.SqlConnectionString, true))
+                    {
+                        var c = dbContext.PackageRegistrations.Count();
+                    }
+                }
+                catch (Exception e)
+                {
+                    return new HttpStatusCodeWithBodyResult(HttpStatusCode.OK, string.Format("NOT-OK : (CheckDatabaseDirectly) {0}", e.Message));
+                }
+
+                if (config.StorageType == StorageType.AwsS3Storage)
+                {
+                    try
+                    { 
+                        var region = RegionEndpoint.GetBySystemName(config.AwsS3Storage_Region);
+                        using(var client = new AmazonS3Client(new BasicAWSCredentials(config.AwsS3Storage_AccessKey, config.AwsS3Storage_SecretKey), region))
+                        {
+                            var req = new ListObjectsV2Request
+                            {
+                                BucketName = config.AwsS3Storage_Bucket,
+                                MaxKeys = 3,
+                            };
+                            var resp = client.ListObjectsV2(req);
+
+                            if (resp.HttpStatusCode != HttpStatusCode.OK)
+                                return new HttpStatusCodeWithBodyResult(HttpStatusCode.OK, "NOT-OK : (CheckAwsAccessability) 'AWS connection did not succeed.'");
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        return new HttpStatusCodeWithBodyResult(HttpStatusCode.OK, string.Format("NOT-OK : (CheckAwsAccessability) '{0}'", ex.Message));
+                    }
+                }
+
+                return new HttpStatusCodeWithBodyResult(HttpStatusCode.OK, "OK");
+            }
+            catch (Exception e)
+            {
+                return new HttpStatusCodeWithBodyResult(HttpStatusCode.OK, string.Format("NOT-OK : (HealthCheckException) {0}", e.Message));
+            }
         }
 
         [HttpPost]
