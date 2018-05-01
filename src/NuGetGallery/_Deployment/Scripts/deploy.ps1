@@ -110,13 +110,18 @@ try
 	Log-And-Run $c $eco
 	if ( $eco.ec -ne 0 ) { exit }
 
-	#$c = "docker cp `"$installationPath\_Deployment\Config\config.json.template`" ${containerName}:C:\app\config\config.json"
-	#Log-And-Run $c $eco
-	#if ( $eco.ec -ne 0 ) { exit }
+	$c = "docker cp `"$installationPath\_Deployment\Config\web.config`" ${containerName}:C:\app\web.config"
+	Log-And-Run $c $eco
+	if ( $eco.ec -ne 0 ) { exit }
 
-	#$c = "docker cp `"$installationPath\_Deployment\Config\log4net.config.template`" ${containerName}:C:\app\config\log4net.config"
-	#Log-And-Run $c $eco
-	#if ( $eco.ec -ne 0 ) { exit }
+	Write-Host "Updating databases"
+	$c = "`"$installationPath\_Deployment\DbUpdater\migrate.exe`" `"NuGetGallery.dll`" MigrationsConfiguration `"NuGetGallery.Core.dll`" `"/startUpDirectory:$installationPath\_Deployment\DbUpdater\`" `"/startUpConfigurationFile:$installationPath\_Deployment\Config\web.config`""
+	Log-And-Run $c $eco
+	if ( $eco.ec -ne 0 ) { exit }
+
+	$c = "`"$installationPath\_Deployment\DbUpdater\migrate.exe`" `"NuGetGallery.dll`" SupportRequestMigrationsConfiguration `"NuGetGallery.dll`" `"/startUpDirectory:$installationPath\_Deployment\DbUpdater\`" `"/startUpConfigurationFile:$installationPath\_Deployment\Config\web.config`""
+	Log-And-Run $c $eco
+	if ( $eco.ec -ne 0 ) { exit }
 
 	Write-Host "Starting container"
 	$c = "docker start `"$containerName`""

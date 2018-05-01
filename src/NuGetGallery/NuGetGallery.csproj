@@ -2072,7 +2072,9 @@
     <Content Include="_Deployment\Scripts\deploy.ps1" />
     <Content Include="_Deployment\Scripts\postdeploy.ps1" />
     <Content Include="_Deployment\Scripts\predeploy.ps1" />
-    <Content Include="_Deployment\AbcNuGetGallery.nuspec" />
+    <Content Include="_Deployment\AbcNuGetGallery.nuspec">
+      <SubType>Designer</SubType>
+    </Content>
     <None Include="_Deployment\Dockerfile" />
   </ItemGroup>
   <ItemGroup>
