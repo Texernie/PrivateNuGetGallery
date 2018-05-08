@@ -7,11 +7,9 @@ using System.Threading;
 using System.Web;
 using System.Web.Mvc;
 using Microsoft.Owin;
-using NuGetGallery.Filters;
 
 namespace NuGetGallery
 {
-    [ApiAuthorize]
     public abstract partial class AppController
         : Controller
     {
