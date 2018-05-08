@@ -18,6 +18,15 @@ namespace NuGetGallery.Authentication.Providers.ApiKey
                     ApiKeyClaim = Config.Claim
                 });
             });
+
+            app.Map("", api =>
+            {
+                api.UseApiKeyAuthentication(new ApiKeyAuthenticationOptions
+                {
+                    ApiKeyHeaderName = Config.HeaderName,
+                    ApiKeyClaim = Config.Claim
+                });
+            });
         }
     }
 }
