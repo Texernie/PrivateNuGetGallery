@@ -1996,6 +1996,9 @@
     <Content Include="Areas\Admin\Views\Delete\_ReflowBulkConfirm.cshtml" />
     <Content Include="Areas\Admin\Views\LockPackage\Index.cshtml" />
     <Content Include="App_Data\Files\Content\Login-Discontinuation-Configuration.json" />
+    <Content Include="Branding\Views\Shared\Gallery\Header.cshtml" />
+    <Content Include="Branding\Views\Shared\Layout.cshtml" />
+    <Content Include="Branding\Views\Shared\SiteMenu.cshtml" />
     <None Include="Scripts\jquery-1.11.0.intellisense.js" />
     <Content Include="Scripts\jquery-1.11.0.js" />
     <Content Include="Scripts\jquery-1.11.0.min.js" />
