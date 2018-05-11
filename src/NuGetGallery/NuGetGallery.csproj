@@ -1999,6 +1999,8 @@
     <Content Include="Branding\Views\Shared\Gallery\Header.cshtml" />
     <Content Include="Branding\Views\Shared\Layout.cshtml" />
     <Content Include="Branding\Views\Shared\SiteMenu.cshtml" />
+    <Content Include="Branding\Views\Pages\Home.cshtml" />
+    <Content Include="Branding\Views\Shared\Gallery\Footer.cshtml" />
     <None Include="Scripts\jquery-1.11.0.intellisense.js" />
     <Content Include="Scripts\jquery-1.11.0.js" />
     <Content Include="Scripts\jquery-1.11.0.min.js" />
