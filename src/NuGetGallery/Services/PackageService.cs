@@ -593,10 +593,11 @@ namespace NuGetGallery
             {
                 throw new EntityException(Strings.NuGetPackagePropertyTooLong, "Summary", "4000");
             }
-            if (packageMetadata.Tags != null && packageMetadata.Tags.Length > 4000)
-            {
-                throw new EntityException(Strings.NuGetPackagePropertyTooLong, "Tags", "4000");
-            }
+            // Disabled because PowershellGet package combines all of the exported functions into a single long string.
+//            if (packageMetadata.Tags != null && packageMetadata.Tags.Length > 4000)
+//            {
+//                throw new EntityException(Strings.NuGetPackagePropertyTooLong, "Tags", "4000");
+//            }
             if (packageMetadata.Title != null && packageMetadata.Title.Length > 256)
             {
                 throw new EntityException(Strings.NuGetPackagePropertyTooLong, "Title", "256");
