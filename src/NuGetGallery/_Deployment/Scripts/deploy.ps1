@@ -1,34 +1,8 @@
 function Log-And-Run ($cmd, $returnObj){
 
-	echo "$cmd"
-	iex "& $cmd"
+	Write-Host "$cmd"
+	Invoke-Expression -Command "& $cmd" | Out-Host
 	$returnObj.ec = $LastExitCode
-}
-
-function StopAndRemoveContainer($containerName)
-{
-	$e = docker ps -a --filter name="$containerName"
-	$e2 = ($e -split '[\r\n]')
-
-	if ($e2.length -eq 1)
-	{
-		return
-	}
-
-	$r = docker ps --filter name="$containerName"
-	$r2 = ($r -split '[\r\n]')
-
-	if ($r2.length -gt 1)
-	{
-		Write-Host "Stopping old container"
-		$c = "docker stop -t 15 `"$containerName`""
-		Log-And-Run $c $eco
-	}
-
-	Write-Host "Removing old container"
-	$c = "docker rm `"$containerName`""
-	Log-And-Run $c $eco
-
 }
 
 try
@@ -44,13 +18,15 @@ try
 		$releaseVersion = $OctopusParameters["Octopus.Release.Number"]
 		$environmentName = $OctopusParameters["Octopus.Environment.Name"]
 		$installationPath = $OctopusParameters["Octopus.Action.Package.CustomInstallationDirectory"]
-	
+		$deploymentId = $OctopusParameters["Octopus.Deployment.Id"]
+
 		$containerPort = $OctopusParameters["NuGetGalleryContainerPort"]
 		$containerHostname = $OctopusParameters["NuGetGalleryContainerHostname"]
 		$containerName = $OctopusParameters["NuGetGalleryContainerName"]
 		$hostPort = $OctopusParameters["NuGetGalleryHostPort"]
 		$dockerRegistry = $OctopusParameters["DockerRegistry"]
 		$dockerRepository = $OctopusParameters["NuGetGalleryDockerRepository"]
+		$nugetUrl = $OctopusParameters["ABCNugetServerBaseUrl"]
     }
     else
     {
@@ -59,6 +35,7 @@ try
 		$releaseVersion = "**Development**"
 		$environmentName = "**Development**"
 		$installationPath = "."
+		$deploymentId = "**Development**"
 	
 		$containerName = "NuGetGallery"
 		$containerHostname = ""
@@ -66,6 +43,7 @@ try
 		$hostPort = ""
 		$dockerRegistry = "dad-docker.abcimaging.com"
 		$dockerRepository = "AbcNuGetGallery"
+		$nugetUrl = "https://nuget-e191776759b9.abcimaging.com/api/v2/"
     }
 	
 	if ([string]::IsNullOrWhiteSpace($containerHostname))
@@ -81,38 +59,83 @@ try
 		$containerHostname = 'T-' + [Guid]::NewGuid().ToString("N").Substring(0,13)
 		Write-Warning "Invalid hostname [$on] using [$containerHostname] instead"
 	}
-
-	echo "Variables:"
-	echo "    Octopus.Action.Package.CustomInstallationDirectory:'$installationPath'"
-	echo "    MachineName: '$machineName'"
-	echo "    ReleaseVersion: '$releaseVersion'"
-	echo "    PackageVersion: '$packageVersion'"
-	echo "    EnvironmentName: '$environmentName'"
-	echo "    InstallationPath: '$installationPath'"
-	echo "    ContainerName: '$containerName'"
-	echo "    ContainerHostname: '$containerHostname'"
-	echo "    ContainerPort: '$containerPort'"
-	echo "    HostPort: '$hostPort'"
-	echo "    DockerRegistry: '$dockerRegistry'"
-	echo "    DockerRepository: '$dockerRepository'"
 	
+	$nugetPublishUrl = "$($nugetUrl)package/"
+
+	Write-Host "Variables:"
+	Write-Host "    Octopus.Deployment.Id:'$deploymentId'"
+	Write-Host "    Octopus.Action.Package.CustomInstallationDirectory:'$installationPath'"
+	Write-Host "    MachineName: '$machineName'"
+	Write-Host "    ReleaseVersion: '$releaseVersion'"
+	Write-Host "    PackageVersion: '$packageVersion'"
+	Write-Host "    EnvironmentName: '$environmentName'"
+	Write-Host "    InstallationPath: '$installationPath'"
+	Write-Host "    ContainerName: '$containerName'"
+	Write-Host "    ContainerHostname: '$containerHostname'"
+	Write-Host "    ContainerPort: '$containerPort'"
+	Write-Host "    HostPort: '$hostPort'"
+	Write-Host "    DockerRegistry: '$dockerRegistry'"
+	Write-Host "    DockerRepository: '$dockerRepository'"
+	Write-Host "    NugetSourceUrl: '$nugetUrl'"
+	Write-Host "    NugetPublishUrl: '$nugetPublishUrl'"
+
 	$eco = @{ec = 0}
-	
-	Write-Host "Pulling new container"
-	$c = "docker pull $dockerRegistry/${dockerRepository}:$packageVersion"
-	Log-And-Run $c $eco
-	
-	StopAndRemoveContainer $containerName
-	
-	Write-Host "Creating new container"
-	
-	$c ="docker create --name `"$containerName`" --publish ${hostPort}:$containerPort --restart always --hostname $containerHostname --network nat $dockerRegistry/${dockerRepository}:$packageVersion"
-	Log-And-Run $c $eco
-	if ( $eco.ec -ne 0 ) { exit }
 
-	$c = "docker cp `"$installationPath\_Deployment\Config\web.config`" ${containerName}:C:\app\bin\web.config"
+	$r = Get-PsRepository | Where-Object { $_.Name -eq 'abc-ps' }
+	if ($null -eq $r){
+		$c = "Register-PSRepository -Name abc-ps -InstallationPolicy Trusted -SourceLocation $nugetUrl -PublishLocation $nugetPublishUrl"
+		Log-And-Run $c $eco
+		if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
+	}
+
+	$lv = $(Find-Module -name AbcDeploymentDockerTools -Repository "abc-ps" | Select-Object Version)
+
+	$em = Get-Module -Name AbcDeploymentDockerTools -ListAvailable | Where-Object { $_.Version -ne $lv.Version }
+	while ($null -ne $em){
+		Write-Host "Removing AbcDeploymentDockerTools module..."
+		$c = 'Uninstall-Module -Name AbcDeploymentDockerTools -Force'
+		Log-And-Run $c $eco
+		if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
+
+		$em = Get-Module -Name AbcDeploymentDockerTools -ListAvailable | Where-Object { $_.Version -ne $lv.Version }
+	}
+
+	$em = Get-Module -Name AbcDeploymentDockerTools -ListAvailable | Where-Object { $_.Version -eq $lv.Version }
+	if ($null -eq $em){
+		$c = 'Install-Module -Repository "abc-ps" -Name AbcDeploymentDockerTools -Force -AllowClobber'
+		Log-And-Run $c $eco
+		if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
+	}
+
+	$c = 'Get-Module -Name "AbcDeploymentDockerTools" -ListAvailable | Format-Table'
 	Log-And-Run $c $eco
-	if ( $eco.ec -ne 0 ) { exit }
+	if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
+
+	$c = 'Import-Module AbcDeploymentDockerTools'
+	Log-And-Run $c $eco
+	if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
+
+	$c = "Redo-DockerContainer -ContainerName $containerName ``
+ -Registry $dockerRegistry ``
+ -Repository $dockerRepository ``
+ -Tag $packageVersion ``
+ -AlwaysRestart ``
+ -HostName $containerHostname ``
+ -TcpPorts @(@{ExternalPort=$hostPort; InternalPort=$containerPort})"
+	Log-And-Run $c $eco
+	if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
+
+	Write-Host "Copying configuration files"
+
+	Write-Host '================'
+	Write-Host '== web.config =='
+	Write-Host '================'
+	Get-Content -Path $installationPath\_Deployment\Config\web.config | Write-Host
+
+	$c = "Add-DockerFile -ContainerName $containerName -SourceFilePath `"$installationPath\_Deployment\Config\web.config`" -DestinationFilePath 'C:\app\bin\web.config'"
+	Log-And-Run $c $eco
+	if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
+
 
 	Write-Host "Updating databases"
 	$c = "`"$installationPath\_Deployment\DbUpdater\migrate.exe`" `"NuGetGallery.dll`" MigrationsConfiguration `"NuGetGallery.Core.dll`" `"/startUpDirectory:$installationPath\_Deployment\DbUpdater\`" `"/startUpConfigurationFile:$installationPath\_Deployment\Config\web.config`""
@@ -124,9 +147,9 @@ try
 	if ( $eco.ec -ne 0 ) { exit }
 
 	Write-Host "Starting container"
-	$c = "docker start `"$containerName`""
+	$c = "Start-DockerContainer -ContainerName $containerName"
 	Log-And-Run $c $eco
-	if ( $eco.ec -ne 0 ) { exit }
+	if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
 
 	Write-Host "Deploy script finished."
 
@@ -136,8 +159,8 @@ catch [system.exception]
 {
 	$ErrorMessage = $_.Exception.Message
 	$FailedItem = $_.Exception.ItemName
-	write-host $FailedItem
-	write-host $ErrorMessage
+	Write-Host $FailedItem
+	Write-Host $ErrorMessage
 	$LastExitCode = 1
 }
 finally

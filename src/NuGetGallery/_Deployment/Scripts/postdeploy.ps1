@@ -16,12 +16,9 @@ try
 		$dockerRepository = $OctopusParameters["NuGetGalleryDockerRepository"]
 		$packageVersion = $OctopusParameters["Octopus.Action.Package.NuGetPackageVersion"]
 
-		$allImages = docker images --quiet "$dockerRegistry/${dockerRepository}"
-		$currentImage = docker images --quiet "$dockerRegistry/${dockerRepository}:$packageVersion"
-
-		$imagesToRemove = $allImages | ? {$currentImage -notcontains $_} | select -Unique
-
-		foreach ($i in $imagesToRemove) { write-host "Removing image $i"; docker rmi --force $i  }
+		$c = "Import-Module AbcDeploymentDockerTools; Uninstall-DockerImages -Registry $dockerRegistry -Repository $dockerRepository -SaveTag $packageVersion"
+		Write-Host "$c"
+		Invoke-Expression -Command "& $c" | Out-Host
     }
 
 	Write-Host "Postdeploy script finished."
