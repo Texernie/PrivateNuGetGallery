@@ -1,3 +1,9 @@
+function Log-And-Run ($cmd, $returnObj){
+
+	Write-Host "$cmd"
+	Invoke-Expression -Command "& $cmd" | Out-Host
+	$returnObj.ec = $LastExitCode
+}
 
 try
 {
