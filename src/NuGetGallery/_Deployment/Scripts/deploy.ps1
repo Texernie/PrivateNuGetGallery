@@ -7,12 +7,13 @@ function Log-And-Run ($cmd, $returnObj){
 
 function Log-And-Copy ($srcFile, $dstFile, $returnObj){
 
-	$msg = "== $([System.IO.Path]::GetFileName($srcFile)) =="
+	$msg = "=== $([System.IO.Path]::GetFileName($srcFile)) ==="
 	$msg2 = [String]::new('=', $msg.Length)
 	Write-Host $msg2
 	Write-Host $msg
 	Write-Host $msg2
-	Get-Content -Path [System.IO.Path]::GetFullPath($srcFile) | Write-Host
+	Get-Content -Path $([System.IO.Path]::GetFullPath($srcFile)) | Write-Host
+	Write-Host $msg2
 
 	$c = "Add-DockerFile -ContainerName $containerName -SourceFilePath `"$([System.IO.Path]::GetFullPath($srcFile))`" -DestinationFilePath '$dstFile'"
 	Log-And-Run $c $returnObj
