@@ -7,7 +7,7 @@ function Log-And-Run ($cmd, $returnObj){
 
 function Log-And-Copy ($srcFile, $dstFile, $returnObj){
 
-	$msg = "== $([System.IO.Path]::GetFileName($blah)) =="
+	$msg = "== $([System.IO.Path]::GetFileName($srcFile)) =="
 	$msg2 = [String]::new('=', $msg.Length)
 	Write-Host $msg2
 	Write-Host $msg
