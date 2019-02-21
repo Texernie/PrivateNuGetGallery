@@ -5,6 +5,19 @@ function Log-And-Run ($cmd, $returnObj){
 	$returnObj.ec = $LastExitCode
 }
 
+function Log-And-Copy ($srcFile, $dstFile, $returnObj){
+
+	$msg = "== $($file.Name) =="
+    $msg2 = [String]::new('=', $msg.Length)
+	Write-Host $msg2
+	Write-Host $msg
+	Write-Host $msg2
+	Get-Content -Path $file.FullName | Write-Host
+
+	$c = "Add-DockerFile -ContainerName $containerName -SourceFilePath `"$($srcFile.FullName)`" -DestinationFilePath '$dstFile'"
+	Log-And-Run $c $returnObj
+}
+
 try
 {
 	$finishedScript = 'false'
@@ -26,7 +39,6 @@ try
 		$hostPort = $OctopusParameters["NuGetGalleryHostPort"]
 		$dockerRegistry = $OctopusParameters["DockerRegistry"]
 		$dockerRepository = $OctopusParameters["NuGetGalleryDockerRepository"]
-		$nugetUrl = $OctopusParameters["ABCNugetServerBaseUrl"]
     }
     else
     {
@@ -41,9 +53,8 @@ try
 		$containerHostname = ""
 		$containerPort = 80
 		$hostPort = ""
-		$dockerRegistry = "dad-docker.abcimaging.com"
+		$dockerRegistry = "250949537405.dkr.ecr.us-east-1.amazonaws.com"
 		$dockerRepository = "AbcNuGetGallery"
-		$nugetUrl = "https://nuget-e191776759b9.abcimaging.com/api/v2/"
     }
 	
 	if ([string]::IsNullOrWhiteSpace($containerHostname))
@@ -60,8 +71,6 @@ try
 		Write-Warning "Invalid hostname [$on] using [$containerHostname] instead"
 	}
 	
-	$nugetPublishUrl = "$($nugetUrl)package/"
-
 	Write-Host "Variables:"
 	Write-Host "    Octopus.Deployment.Id:'$deploymentId'"
 	Write-Host "    Octopus.Action.Package.CustomInstallationDirectory:'$installationPath'"
@@ -76,40 +85,8 @@ try
 	Write-Host "    HostPort: '$hostPort'"
 	Write-Host "    DockerRegistry: '$dockerRegistry'"
 	Write-Host "    DockerRepository: '$dockerRepository'"
-	Write-Host "    NugetSourceUrl: '$nugetUrl'"
-	Write-Host "    NugetPublishUrl: '$nugetPublishUrl'"
 
 	$eco = @{ec = 0}
-
-	$r = Get-PsRepository | Where-Object { $_.Name -eq 'abc-ps' }
-	if ($null -eq $r){
-		$c = "Register-PSRepository -Name abc-ps -InstallationPolicy Trusted -SourceLocation $nugetUrl -PublishLocation $nugetPublishUrl"
-		Log-And-Run $c $eco
-		if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
-	}
-
-	$lv = $(Find-Module -name AbcDeploymentDockerTools -Repository "abc-ps" | Select-Object Version)
-
-	$em = Get-Module -Name AbcDeploymentDockerTools -ListAvailable | Where-Object { $_.Version -ne $lv.Version }
-	while ($null -ne $em){
-		Write-Host "Removing AbcDeploymentDockerTools module..."
-		$c = 'Uninstall-Module -Name AbcDeploymentDockerTools -Force'
-		Log-And-Run $c $eco
-		if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
-
-		$em = Get-Module -Name AbcDeploymentDockerTools -ListAvailable | Where-Object { $_.Version -ne $lv.Version }
-	}
-
-	$em = Get-Module -Name AbcDeploymentDockerTools -ListAvailable | Where-Object { $_.Version -eq $lv.Version }
-	if ($null -eq $em){
-		$c = 'Install-Module -Repository "abc-ps" -Name AbcDeploymentDockerTools -Force -AllowClobber'
-		Log-And-Run $c $eco
-		if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
-	}
-
-	$c = 'Get-Module -Name "AbcDeploymentDockerTools" -ListAvailable | Format-Table'
-	Log-And-Run $c $eco
-	if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
 
 	$c = 'Import-Module AbcDeploymentDockerTools'
 	Log-And-Run $c $eco
@@ -127,13 +104,7 @@ try
 
 	Write-Host "Copying configuration files"
 
-	Write-Host '================'
-	Write-Host '== web.config =='
-	Write-Host '================'
-	Get-Content -Path $installationPath\_Deployment\Config\web.config | Write-Host
-
-	$c = "Add-DockerFile -ContainerName $containerName -SourceFilePath `"$installationPath\_Deployment\Config\web.config`" -DestinationFilePath 'C:\app\bin\web.config'"
-	Log-And-Run $c $eco
+	Log-And-Copy $installationPath\_Deployment\Config\web.config C:\app\bin\web.config $eco
 	if (( $eco.ec -ne 0 ) -and ($null -ne $eco.ec )) { exit }
 
 
